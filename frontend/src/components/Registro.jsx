@@ -2,7 +2,7 @@ import { useState } from "react"
 
 export default function Registro({ onRegistro, irALogin }) {
   const [form, setForm] = useState({
-    nombre: "", correo: "", contrasena: "", telefono: "", rol: "arbitro"
+    nombre: "", correo: "", contrasena: "", telefono: "", rol: "arbitro", codigo_escuela: ""
   })
   const [error, setError] = useState("")
   const [cargando, setCargando] = useState(false)
@@ -71,7 +71,7 @@ export default function Registro({ onRegistro, irALogin }) {
           placeholder="3001234567" />
       </div>
 
-      <div className="mb-6">
+      <div className="mb-3">
         <label className="block text-sm text-gray-600 mb-1">Rol</label>
         <select name="rol" value={form.rol} onChange={handleChange}
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400">
@@ -80,8 +80,17 @@ export default function Registro({ onRegistro, irALogin }) {
         </select>
       </div>
 
+      {form.rol === "arbitro" && (
+        <div className="mb-3">
+          <label className="block text-sm text-gray-600 mb-1">Código de escuela</label>
+          <input name="codigo_escuela" value={form.codigo_escuela} onChange={handleChange}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400"
+            placeholder="Ej: ARB-X7K2" />
+        </div>
+      )}
+
       <button onClick={handleRegistro} disabled={cargando}
-        className="w-full bg-purple-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50">
+        className="w-full bg-purple-600 text-white py-2 rounded-lg text-sm font-medium mt-3 hover:bg-purple-700 disabled:opacity-50">
         {cargando ? "Registrando..." : "Crear cuenta"}
       </button>
 
