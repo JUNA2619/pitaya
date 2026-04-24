@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react"
 import BoardKanban from "./BoardKanban"
 import GestionArbitros from "./GestionArbitros"
 
+const API = import.meta.env.VITE_API_URL
+
 export default function DashboardProgramador({ usuario, onLogout }) {
   const [partidos, setPartidos] = useState([])
   const [arbitros, setArbitros] = useState([])
@@ -20,12 +22,8 @@ export default function DashboardProgramador({ usuario, onLogout }) {
     try {
       const token = localStorage.getItem("token")
       const [resPartidos, resArbitros] = await Promise.all([
-        fetch("http://127.0.0.1:8000/partidos", {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch("http://127.0.0.1:8000/arbitros", {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        fetch(`${API}/partidos`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API}/arbitros`, { headers: { Authorization: `Bearer ${token}` } })
       ])
       setPartidos(await resPartidos.json())
       setArbitros(await resArbitros.json())
@@ -45,7 +43,7 @@ export default function DashboardProgramador({ usuario, onLogout }) {
       const token = localStorage.getItem("token")
       const formData = new FormData()
       formData.append("file", archivo)
-      const res = await fetch("http://127.0.0.1:8000/partidos/csv", {
+      const res = await fetch(`${API}/partidos/csv`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -72,59 +70,25 @@ export default function DashboardProgramador({ usuario, onLogout }) {
         <div className="flex items-center gap-3">
           {vista === "board" && (
             <>
-              <input
-                ref={inputCsvRef}
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={subirCsv}
-                className="hidden"
-                id="inputCsv"
-              />
-              <label
-                htmlFor="inputCsv"
-                className={`text-sm px-4 py-1.5 rounded-lg border cursor-pointer transition-all ${subiendoCsv ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200" : "bg-purple-600 text-white border-purple-600 hover:bg-purple-700"}`}
-              >
+              <input ref={inputCsvRef} type="file" accept=".csv,.xlsx,.xls" onChange={subirCsv} className="hidden" id="inputCsv" />
+              <label htmlFor="inputCsv" className={`text-sm px-4 py-1.5 rounded-lg border cursor-pointer transition-all ${subiendoCsv ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200" : "bg-purple-600 text-white border-purple-600 hover:bg-purple-700"}`}>
                 {subiendoCsv ? "Subiendo..." : "Subir partidos"}
               </label>
-              <button
-                onClick={() => setVista("arbitros")}
-                className="text-sm border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50"
-              >
-                Árbitros
-              </button>
+              <button onClick={() => setVista("arbitros")} className="text-sm border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50">Árbitros</button>
             </>
           )}
-          <button
-            onClick={onLogout}
-            className="text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50"
-          >
-            Cerrar sesión
-          </button>
+          <button onClick={onLogout} className="text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50">Cerrar sesión</button>
         </div>
       </div>
-
       {mensajeCsv && vista === "board" && (
         <div className={`mx-6 mt-4 px-4 py-3 rounded-lg text-sm ${mensajeCsv.tipo === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
           {mensajeCsv.texto}
           <button onClick={() => setMensajeCsv(null)} className="ml-3 underline text-xs">cerrar</button>
         </div>
       )}
-
       <div className="px-6 py-6">
-        {vista === "board" && (
-          cargando ? (
-            <p className="text-gray-400 text-sm">Cargando...</p>
-          ) : (
-            <BoardKanban
-              partidos={partidos}
-              arbitros={arbitros}
-              onActualizar={cargarDatos}
-            />
-          )
-        )}
-        {vista === "arbitros" && (
-          <GestionArbitros onVolver={() => setVista("board")} />
-        )}
+        {vista === "board" && (cargando ? <p className="text-gray-400 text-sm">Cargando...</p> : <BoardKanban partidos={partidos} arbitros={arbitros} onActualizar={cargarDatos} />)}
+        {vista === "arbitros" && <GestionArbitros onVolver={() => setVista("board")} />}
       </div>
     </div>
   )

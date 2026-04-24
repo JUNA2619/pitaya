@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react"
 
+const API = import.meta.env.VITE_API_URL
+
 export default function ReporteMensual({ token }) {
   const [reporte, setReporte] = useState(null)
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/arbitros/reporte-mensual", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    fetch(`${API}/arbitros/reporte-mensual`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => { setReporte(data); setCargando(false) })
       .catch(() => setCargando(false))
@@ -17,9 +17,8 @@ export default function ReporteMensual({ token }) {
   if (!reporte) return <p className="text-sm text-gray-400">Error cargando reporte.</p>
 
   return (
-    <div>
+    <div className="px-6">
       <p className="text-xs font-medium text-gray-500 mb-4 uppercase tracking-wide">Reporte mensual</p>
-
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-purple-600">{reporte.total}</p>
@@ -34,11 +33,8 @@ export default function ReporteMensual({ token }) {
           <p className="text-xs text-gray-500 mt-1">Pagos pendientes</p>
         </div>
       </div>
-
       <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">Detalle de partidos</p>
-      {reporte.asignaciones.length === 0 && (
-        <p className="text-sm text-gray-400">No tienes partidos confirmados este mes.</p>
-      )}
+      {reporte.asignaciones.length === 0 && <p className="text-sm text-gray-400">No tienes partidos confirmados.</p>}
       {reporte.asignaciones.map(a => (
         <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-4 mb-3 flex justify-between items-center">
           <div>
