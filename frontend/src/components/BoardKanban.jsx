@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-const API = import.meta.env.VITE_API_URL
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
 
 export default function BoardKanban({ partidos, arbitros, onActualizar }) {
   const [partidoSel, setPartidoSel] = useState(null)
@@ -8,32 +8,78 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
   const [rol, setRol] = useState("central")
   const [modal, setModal] = useState(false)
   const [cargando, setCargando] = useState(false)
+  const [verificando, setVerificando] = useState(false)
+  const [errorConflicto, setErrorConflicto] = useState(null)
 
   const sinAsignar = partidos.filter(p => p.estado === "sin_asignar")
 
-  const seleccionarPartido = (partido) => { setPartidoSel(partido); setArbitroSel(null); setModal(false) }
-  const seleccionarArbitro = (arbitro) => { if (!partidoSel) return; setArbitroSel(arbitro); setModal(true) }
+  const seleccionarPartido = (partido) => {
+    setPartidoSel(partido)
+    setArbitroSel(null)
+    setModal(false)
+    setErrorConflicto(null)
+  }
+
+  const seleccionarArbitro = async (arbitro) => {
+    if (!partidoSel) return
+    setArbitroSel(arbitro)
+    setErrorConflicto(null)
+    setVerificando(true)
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`${API}/asignaciones/verificar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ partido_id: partidoSel.id, arbitro_id: arbitro.id })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setErrorConflicto(data.detail)
+      } else {
+        setModal(true)
+      }
+    } catch {
+      setModal(true)
+    } finally {
+      setVerificando(false)
+    }
+  }
 
   const generarMensaje = () => {
     if (!partidoSel || !arbitroSel) return ""
     return `Hola ${arbitroSel.nombre}, tienes partido asignado:\n\nTorneo: ${partidoSel.torneo}\nFecha: ${partidoSel.fecha}\nHora: ${partidoSel.hora}\nCancha: ${partidoSel.cancha}\nTipo: ${partidoSel.tipo}\nTiempos: ${partidoSel.num_periodos} de ${partidoSel.tiempo_periodo} min\nRol: ${rol}\nPago: ${partidoSel.tipo_pago}\n\nConfirma en la app. Gracias!`
   }
 
-  const confirmarAsignacion = async () => {
+  const asignar = async (enviarWhatsapp) => {
     setCargando(true)
     try {
       const token = localStorage.getItem("token")
-      await fetch(`${API}/asignaciones`, {
+      const res = await fetch(`${API}/asignaciones`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ partido_id: partidoSel.id, arbitro_id: arbitroSel.id, rol })
       })
-      const msg = generarMensaje()
-      window.open(`https://wa.me/57${arbitroSel.telefono}?text=${encodeURIComponent(msg)}`)
-      setModal(false); setPartidoSel(null); setArbitroSel(null)
+      const data = await res.json()
+      if (!res.ok) {
+        setErrorConflicto(data.detail)
+        setModal(false)
+        return
+      }
+      if (enviarWhatsapp) {
+        const msg = generarMensaje()
+        window.open(`https://wa.me/57${arbitroSel.telefono}?text=${encodeURIComponent(msg)}`)
+        await fetch(`${API}/asignaciones/${data.id}/whatsapp`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      }
+      setModal(false)
+      setPartidoSel(null)
+      setArbitroSel(null)
+      setErrorConflicto(null)
       onActualizar()
     } catch {
-      console.error("Error al asignar")
+      setErrorConflicto("Error al conectar con el servidor")
     } finally {
       setCargando(false)
     }
@@ -45,6 +91,7 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
         <h2 className="text-base font-semibold text-gray-800">Board de asignaciones</h2>
         <span className="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">{sinAsignar.length} sin asignar</span>
       </div>
+
       <div className="grid grid-cols-2 gap-6">
         <div>
           <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">Partidos sin asignar</p>
@@ -70,8 +117,17 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
             </div>
           ))}
         </div>
+
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">{partidoSel ? "Elige un árbitro" : "Árbitros disponibles"}</p>
+          <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">
+            {partidoSel ? "Elige un árbitro" : "Árbitros disponibles"}
+          </p>
+          {verificando && <p className="text-xs text-gray-400 mb-2">Verificando disponibilidad...</p>}
+          {errorConflicto && (
+            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700 mb-3">
+              ⚠️ {errorConflicto}
+            </div>
+          )}
           {arbitros.length === 0 && <p className="text-sm text-gray-400">No hay árbitros disponibles</p>}
           {arbitros.map(a => (
             <div key={a.id} onClick={() => seleccionarArbitro(a)}
@@ -87,6 +143,7 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
           ))}
         </div>
       </div>
+
       {modal && partidoSel && arbitroSel && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
@@ -100,17 +157,28 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
             </div>
             <div className="mb-4">
               <label className="block text-sm text-gray-600 mb-1">Rol</label>
-              <select value={rol} onChange={e => setRol(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+              <select value={rol} onChange={e => setRol(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 <option value="central">Árbitro central</option>
                 <option value="asistente">Asistente</option>
                 <option value="planilla">Planilla</option>
               </select>
             </div>
-            <div className="bg-green-50 rounded-lg p-3 text-xs text-green-700 mb-4 whitespace-pre-line">{generarMensaje()}</div>
-            <div className="flex gap-3">
-              <button onClick={() => setModal(false)} className="flex-1 border border-gray-200 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
-              <button onClick={confirmarAsignacion} disabled={cargando} className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
-                {cargando ? "Asignando..." : "Asignar y abrir WhatsApp"}
+            <div className="bg-green-50 rounded-lg p-3 text-xs text-green-700 mb-4 whitespace-pre-line">
+              {generarMensaje()}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setModal(false); setErrorConflicto(null) }}
+                className="flex-1 border border-gray-200 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button onClick={() => asignar(false)} disabled={cargando}
+                className="flex-1 border border-purple-300 text-purple-700 py-2 rounded-lg text-sm hover:bg-purple-50 disabled:opacity-50">
+                {cargando ? "..." : "Solo asignar"}
+              </button>
+              <button onClick={() => asignar(true)} disabled={cargando}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
+                {cargando ? "..." : "Asignar y enviar"}
               </button>
             </div>
           </div>
