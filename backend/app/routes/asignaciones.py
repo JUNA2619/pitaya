@@ -35,7 +35,7 @@ def verificar_asignacion(data: dict, usuario=Depends(verificar_token)):
 
 @router.post("")
 def crear_asignacion(data: dict, usuario=Depends(verificar_token)):
-    existente = supabase.table("asignaciones").select("id").eq("partido_id", data["partido_id"]).eq("arbitro_id", data["arbitro_id"]).execute()
+    existente = supabase.table("asignaciones").select("id").eq("partido_id", data["partido_id"]).eq("arbitro_id", data["arbitro_id"]).neq("estado", "cancelado").neq("estado", "rechazado").execute()
     if existente.data:
         raise HTTPException(status_code=400, detail="Este árbitro ya está asignado a este partido")
     partido = supabase.table("partidos").select("fecha, hora").eq("id", data["partido_id"]).execute()

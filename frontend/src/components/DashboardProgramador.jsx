@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import BoardKanban from "./BoardKanban"
 import CrearPartido from "./CrearPartido"
 import PartidosAsignados from "./PartidosAsignados"
+import NotificarArbitros from "./NotificarArbitros"
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
 
@@ -11,6 +12,7 @@ export default function DashboardProgramador({ usuario, onLogout }) {
   const [cargando, setCargando] = useState(true)
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [vista, setVista] = useState("board")
+  const [pendientesWhatsapp, setPendientesWhatsapp] = useState(0)
 
   useEffect(() => {
     if (vista === "board") cargarDatos()
@@ -20,12 +22,15 @@ export default function DashboardProgramador({ usuario, onLogout }) {
     setCargando(true)
     try {
       const token = localStorage.getItem("token")
-      const [resPartidos, resArbitros] = await Promise.all([
+      const [resPartidos, resArbitros, resPendientes] = await Promise.all([
         fetch(`${API}/partidos`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API}/arbitros`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API}/arbitros`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API}/asignaciones/pendientes-whatsapp`, { headers: { Authorization: `Bearer ${token}` } })
       ])
       setPartidos(await resPartidos.json())
       setArbitros(await resArbitros.json())
+      const pendientes = await resPendientes.json()
+      setPendientesWhatsapp(pendientes.length)
     } catch {
       console.error("Error cargando datos")
     } finally {
@@ -51,6 +56,15 @@ export default function DashboardProgramador({ usuario, onLogout }) {
                 className="text-sm border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50">
                 Asignados
               </button>
+              <button onClick={() => setVista("notificar")}
+                className={`relative text-sm px-3 py-1.5 rounded-lg border transition-all ${pendientesWhatsapp > 0 ? "bg-green-600 text-white border-green-600 hover:bg-green-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                Notificar
+                {pendientesWhatsapp > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                    {pendientesWhatsapp}
+                  </span>
+                )}
+              </button>
             </>
           )}
           <button onClick={onLogout}
@@ -65,9 +79,8 @@ export default function DashboardProgramador({ usuario, onLogout }) {
           cargando ? <p className="text-gray-400 text-sm">Cargando...</p> :
           <BoardKanban partidos={partidos} arbitros={arbitros} onActualizar={cargarDatos} />
         )}
-        {vista === "asignados" && (
-          <PartidosAsignados onVolver={() => setVista("board")} />
-        )}
+        {vista === "asignados" && <PartidosAsignados onVolver={() => setVista("board")} />}
+        {vista === "notificar" && <NotificarArbitros onVolver={() => setVista("board")} />}
       </div>
 
       {mostrarCrear && (

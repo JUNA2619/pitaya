@@ -27,7 +27,7 @@ export default function NotificarArbitros({ onVolver }) {
   const generarMensaje = (arbitro) => {
     const lista = arbitro.asignaciones.map((a, i) => {
       const p = a.partidos
-      return `${i + 1}. ${p?.torneo || "Sin torneo"} — ${p?.hora?.slice(0,5) || ""} — ${p?.cancha || "Sin cancha"} — ${a.rol}`
+      return `${i + 1}. ${p?.torneo || "Sin torneo"} — ${p?.fecha} — ${p?.hora?.slice(0,5) || ""} — ${p?.cancha || "Sin cancha"} — ${a.rol}`
     }).join("\n")
     return `Hola ${arbitro.nombre}, tienes estos partidos asignados:\n\n${lista}\n\nConfirma en la app. Gracias!`
   }
@@ -82,7 +82,7 @@ export default function NotificarArbitros({ onVolver }) {
           <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 space-y-1">
             {a.asignaciones.map((asig, i) => (
               <p key={asig.id}>
-                {i + 1}. {asig.partidos?.torneo || "Sin torneo"} — {asig.partidos?.hora?.slice(0,5)} — {asig.partidos?.cancha || "Sin cancha"} — {asig.rol}
+                {i + 1}. {asig.partidos?.torneo || "Sin torneo"} — {asig.partidos?.fecha} — {asig.partidos?.hora?.slice(0,5)} — {asig.partidos?.cancha || "Sin cancha"} — {asig.rol}
               </p>
             ))}
           </div>

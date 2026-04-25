@@ -167,19 +167,21 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
             <div className="bg-green-50 rounded-lg p-3 text-xs text-green-700 mb-4 whitespace-pre-line">
               {generarMensaje()}
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => { setModal(false); setErrorConflicto(null) }}
-                className="flex-1 border border-gray-200 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50">
-                Cancelar
-              </button>
+            <div className="flex flex-col gap-2">
               <button onClick={() => asignar(false)} disabled={cargando}
-                className="flex-1 border border-purple-300 text-purple-700 py-2 rounded-lg text-sm hover:bg-purple-50 disabled:opacity-50">
-                {cargando ? "..." : "Solo asignar"}
+                className="w-full bg-purple-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50">
+                {cargando ? "Asignando..." : "Asignar"}
               </button>
-              <button onClick={() => asignar(true)} disabled={cargando}
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
-                {cargando ? "..." : "Asignar y enviar"}
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => { setModal(false); setErrorConflicto(null) }}
+                  className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-lg text-sm hover:bg-gray-50">
+                  Cancelar
+                </button>
+                <button onClick={() => asignar(true)} disabled={cargando}
+                  className="flex-1 border border-green-300 text-green-700 py-2 rounded-lg text-sm hover:bg-green-50 disabled:opacity-50">
+                  {cargando ? "..." : "Asignar y enviar WhatsApp"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
