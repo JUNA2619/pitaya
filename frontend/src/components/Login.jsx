@@ -1,5 +1,7 @@
 import { useState } from "react"
 
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
+
 export default function Login({ onLogin, irARegistro }) {
   const [correo, setCorreo] = useState("")
   const [contrasena, setContrasena] = useState("")
@@ -10,7 +12,7 @@ export default function Login({ onLogin, irARegistro }) {
     setError("")
     setCargando(true)
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/login", {
+      const res = await fetch(`${API}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo, contrasena })
@@ -57,7 +59,7 @@ export default function Login({ onLogin, irARegistro }) {
           type="password"
           value={contrasena}
           onChange={e => setContrasena(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-puerto-400"
           placeholder="••••••"
         />
       </div>
