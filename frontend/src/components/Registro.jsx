@@ -1,9 +1,9 @@
 import { useState } from "react"
 
-const API = import.meta.env.VITE_API_URL
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
 
 export default function Registro({ onRegistro, irALogin }) {
-  const [form, setForm] = useState({ nombre: "", correo: "", contrasena: "", telefono: "", rol: "arbitro", codigo_escuela: "" })
+  const [form, setForm] = useState({ nombre: "", correo: "", contrasena: "", telefono: "", rol: "arbitro" })
   const [error, setError] = useState("")
   const [cargando, setCargando] = useState(false)
 
@@ -30,34 +30,34 @@ export default function Registro({ onRegistro, irALogin }) {
       {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg mb-4">{error}</div>}
       <div className="mb-3">
         <label className="block text-sm text-gray-600 mb-1">Nombre</label>
-        <input name="nombre" value={form.nombre} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="Tu nombre" />
+        <input name="nombre" value={form.nombre} onChange={handleChange}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="Tu nombre" />
       </div>
       <div className="mb-3">
         <label className="block text-sm text-gray-600 mb-1">Correo</label>
-        <input name="correo" type="email" value={form.correo} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="juan@ejemplo.com" />
+        <input name="correo" type="email" value={form.correo} onChange={handleChange}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="juan@ejemplo.com" />
       </div>
       <div className="mb-3">
         <label className="block text-sm text-gray-600 mb-1">Contraseña</label>
-        <input name="contrasena" type="password" value={form.contrasena} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="••••••" />
+        <input name="contrasena" type="password" value={form.contrasena} onChange={handleChange}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="••••••" />
       </div>
       <div className="mb-3">
         <label className="block text-sm text-gray-600 mb-1">Teléfono</label>
-        <input name="telefono" value={form.telefono} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="3001234567" />
+        <input name="telefono" value={form.telefono} onChange={handleChange}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="3001234567" />
       </div>
-      <div className="mb-3">
+      <div className="mb-6">
         <label className="block text-sm text-gray-600 mb-1">Rol</label>
-        <select name="rol" value={form.rol} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400">
+        <select name="rol" value={form.rol} onChange={handleChange}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400">
           <option value="arbitro">Árbitro</option>
           <option value="programador">Programador</option>
         </select>
       </div>
-      {form.rol === "arbitro" && (
-        <div className="mb-3">
-          <label className="block text-sm text-gray-600 mb-1">Código de escuela</label>
-          <input name="codigo_escuela" value={form.codigo_escuela} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400" placeholder="Ej: ARB-X7K2" />
-        </div>
-      )}
-      <button onClick={handleRegistro} disabled={cargando} className="w-full bg-purple-600 text-white py-2 rounded-lg text-sm font-medium mt-3 hover:bg-purple-700 disabled:opacity-50">
+      <button onClick={handleRegistro} disabled={cargando}
+        className="w-full bg-purple-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50">
         {cargando ? "Registrando..." : "Crear cuenta"}
       </button>
       <p className="text-center text-sm text-gray-500 mt-4">¿Ya tienes cuenta?{" "}
