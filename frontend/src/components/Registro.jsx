@@ -13,6 +13,7 @@ export default function Registro({ onRegistro, irALogin }) {
 
   const handleRegistro = async () => {
     setError("")
+    console.log("ROL ENVIADO:", form.rol)
     if (form.contrasena !== form.confirmarContrasena) {
       setError("Las contraseñas no coinciden. Por favor verifíquelas.")
       return
@@ -27,7 +28,11 @@ export default function Registro({ onRegistro, irALogin }) {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.detail || "Error al registrarse") }
-      else { localStorage.setItem("token", data.token); onRegistro(data.usuario) }
+      else {
+        console.log("USUARIO RECIBIDO:", data.usuario)
+        localStorage.setItem("token", data.token)
+        onRegistro(data.usuario)
+      }
     } catch { setError("No se pudo conectar al servidor") } finally { setCargando(false) }
   }
 

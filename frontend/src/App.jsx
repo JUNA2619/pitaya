@@ -18,7 +18,7 @@ export default function App() {
     return <DashboardProgramador usuario={usuario} onLogout={handleLogout} />
   }
 
-  if (usuario?.rol === "arbitro") {
+  if (usuario) {
     return <DashboardArbitro usuario={usuario} onLogout={handleLogout} />
   }
 
