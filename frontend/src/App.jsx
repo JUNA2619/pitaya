@@ -9,9 +9,11 @@ export default function App() {
   const [usuario, setUsuario] = useState(null)
 
   const handleLogin = (u) => setUsuario(u)
+
   const handleLogout = () => {
     localStorage.removeItem("token")
     setUsuario(null)
+    setPantalla("login")
   }
 
   if (usuario?.rol === "programador") {

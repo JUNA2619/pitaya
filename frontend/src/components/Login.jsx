@@ -6,10 +6,26 @@ export default function Login({ onLogin, irARegistro }) {
   const [correo, setCorreo] = useState("")
   const [contrasena, setContrasena] = useState("")
   const [error, setError] = useState("")
+  const [shake, setShake] = useState(false)
   const [cargando, setCargando] = useState(false)
+
+  const mostrarError = (msg) => {
+    setError(msg)
+    setShake(false)
+    setTimeout(() => setShake(true), 10)
+  }
 
   const handleLogin = async () => {
     setError("")
+    if (!correo || !contrasena) {
+      mostrarError("Por favor complete todos los campos para continuar.")
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(correo)) {
+      mostrarError("El correo ingresado no tiene un formato válido.")
+      return
+    }
     setCargando(true)
     try {
       const res = await fetch(`${API}/auth/login`, {
@@ -19,13 +35,13 @@ export default function Login({ onLogin, irARegistro }) {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.detail || "Error al iniciar sesión")
+        mostrarError(data.detail || "Correo o contraseña incorrectos. Verifique sus datos e intente de nuevo.")
       } else {
         localStorage.setItem("token", data.token)
         onLogin(data.usuario)
       }
     } catch {
-      setError("No se pudo conectar al servidor")
+      mostrarError("No se pudo conectar al servidor.")
     } finally {
       setCargando(false)
     }
@@ -37,29 +53,46 @@ export default function Login({ onLogin, irARegistro }) {
       <p className="text-gray-500 text-sm mb-6">Inicia sesión para continuar</p>
 
       {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg mb-4">
+        <div
+          className="bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg mb-4"
+          style={{ animation: shake ? "shake 0.4s ease" : "none" }}
+        >
           {error}
         </div>
       )}
 
+      <style>{`
+        @keyframes shake {
+          0%,100% { transform: translateX(0); }
+          20% { transform: translateX(-6px); }
+          40% { transform: translateX(6px); }
+          60% { transform: translateX(-4px); }
+          80% { transform: translateX(4px); }
+        }
+      `}</style>
+
       <div className="mb-4">
-        <label className="block text-sm text-gray-600 mb-1">Correo</label>
+        <label className="block text-sm text-gray-600 mb-1">
+          Correo electrónico <span className="text-red-500">*</span>
+        </label>
         <input
           type="email"
           value={correo}
           onChange={e => setCorreo(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400"
+          className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400 ${!correo && error ? "border-red-400" : "border-gray-200"}`}
           placeholder="juan@ejemplo.com"
         />
       </div>
 
       <div className="mb-6">
-        <label className="block text-sm text-gray-600 mb-1">Contraseña</label>
+        <label className="block text-sm text-gray-600 mb-1">
+          Contraseña <span className="text-red-500">*</span>
+        </label>
         <input
           type="password"
           value={contrasena}
           onChange={e => setContrasena(e.target.value)}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-puerto-400"
+          className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-400 ${!contrasena && error ? "border-red-400" : "border-gray-200"}`}
           placeholder="••••••"
         />
       </div>
@@ -74,9 +107,7 @@ export default function Login({ onLogin, irARegistro }) {
 
       <p className="text-center text-sm text-gray-500 mt-4">
         ¿No tienes cuenta?{" "}
-        <button onClick={irARegistro} className="text-purple-600 hover:underline">
-          Regístrate
-        </button>
+        <button onClick={irARegistro} className="text-purple-600 hover:underline">Regístrate</button>
       </p>
     </div>
   )

@@ -10,6 +10,7 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
   const [cargando, setCargando] = useState(false)
   const [verificando, setVerificando] = useState(false)
   const [errorConflicto, setErrorConflicto] = useState(null)
+  const [errorRol, setErrorRol] = useState(false)
 
   const sinAsignar = partidos.filter(p => p.estado === "sin_asignar")
 
@@ -33,16 +34,8 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
         body: JSON.stringify({ partido_id: partidoSel.id, arbitro_id: arbitro.id })
       })
       const data = await res.json()
-      if (!res.ok) {
-        setErrorConflicto(data.detail)
-      } else {
-        setModal(true)
-      }
-    } catch {
-      setModal(true)
-    } finally {
-      setVerificando(false)
-    }
+      if (!res.ok) { setErrorConflicto(data.detail) } else { setModal(true) }
+    } catch { setModal(true) } finally { setVerificando(false) }
   }
 
   const generarMensaje = () => {
@@ -51,6 +44,8 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
   }
 
   const asignar = async (enviarWhatsapp) => {
+    if (!rol) { setErrorRol(true); return }
+    setErrorRol(false)
     setCargando(true)
     try {
       const token = localStorage.getItem("token")
@@ -60,29 +55,17 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
         body: JSON.stringify({ partido_id: partidoSel.id, arbitro_id: arbitroSel.id, rol })
       })
       const data = await res.json()
-      if (!res.ok) {
-        setErrorConflicto(data.detail)
-        setModal(false)
-        return
-      }
+      if (!res.ok) { setErrorConflicto(data.detail); setModal(false); return }
       if (enviarWhatsapp) {
         const msg = generarMensaje()
         window.open(`https://wa.me/57${arbitroSel.telefono}?text=${encodeURIComponent(msg)}`)
         await fetch(`${API}/asignaciones/${data.id}/whatsapp`, {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` }
+          method: "PATCH", headers: { Authorization: `Bearer ${token}` }
         })
       }
-      setModal(false)
-      setPartidoSel(null)
-      setArbitroSel(null)
-      setErrorConflicto(null)
+      setModal(false); setPartidoSel(null); setArbitroSel(null); setErrorConflicto(null)
       onActualizar()
-    } catch {
-      setErrorConflicto("Error al conectar con el servidor")
-    } finally {
-      setCargando(false)
-    }
+    } catch { setErrorConflicto("Error al conectar con el servidor.") } finally { setCargando(false) }
   }
 
   return (
@@ -122,6 +105,7 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
           <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">
             {partidoSel ? "Elige un árbitro" : "Árbitros disponibles"}
           </p>
+          {!partidoSel && <p className="text-xs text-gray-400 mb-3">Selecciona primero un partido para habilitar esta columna.</p>}
           {verificando && <p className="text-xs text-gray-400 mb-2">Verificando disponibilidad...</p>}
           {errorConflicto && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700 mb-3">
@@ -156,13 +140,16 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
               <p>Pago: {partidoSel.tipo_pago}</p>
             </div>
             <div className="mb-4">
-              <label className="block text-sm text-gray-600 mb-1">Rol</label>
-              <select value={rol} onChange={e => setRol(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+              <label className="block text-sm text-gray-600 mb-1">
+                Rol <span className="text-red-500">*</span>
+              </label>
+              <select value={rol} onChange={e => { setRol(e.target.value); setErrorRol(false) }}
+                className={`w-full border rounded-lg px-3 py-2 text-sm ${errorRol ? "border-red-400" : "border-gray-200"}`}>
                 <option value="central">Árbitro central</option>
                 <option value="asistente">Asistente</option>
                 <option value="planilla">Planilla</option>
               </select>
+              {errorRol && <p className="text-red-500 text-xs mt-1">Debe seleccionar el rol del árbitro para continuar.</p>}
             </div>
             <div className="bg-green-50 rounded-lg p-3 text-xs text-green-700 mb-4 whitespace-pre-line">
               {generarMensaje()}
@@ -173,7 +160,7 @@ export default function BoardKanban({ partidos, arbitros, onActualizar }) {
                 {cargando ? "Asignando..." : "Asignar"}
               </button>
               <div className="flex gap-2">
-                <button onClick={() => { setModal(false); setErrorConflicto(null) }}
+                <button onClick={() => { setModal(false); setErrorConflicto(null); setErrorRol(false) }}
                   className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-lg text-sm hover:bg-gray-50">
                   Cancelar
                 </button>

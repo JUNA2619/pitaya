@@ -9,11 +9,21 @@ export default function CrearPartido({ onGuardado, onCancelar }) {
   })
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
+  const [camposVacios, setCamposVacios] = useState(false)
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value })
 
   const guardar = async () => {
-    if (!form.fecha || !form.hora) { setError("Fecha y hora son obligatorias"); return }
+    setCamposVacios(false)
+    if (!form.fecha || !form.hora) {
+      setError("La fecha y la hora del partido son obligatorias.")
+      setCamposVacios(true)
+      return
+    }
+    if (form.num_periodos < 1 || form.tiempo_periodo < 1) {
+      setError("Ingrese un número entero positivo en los campos de periodos y minutos.")
+      return
+    }
     setCargando(true); setError(null)
     try {
       const token = localStorage.getItem("token")
@@ -26,7 +36,7 @@ export default function CrearPartido({ onGuardado, onCancelar }) {
       if (!res.ok) throw new Error(data.detail)
       onGuardado()
     } catch (err) {
-      setError(err.message)
+      setError(err.message || "No se pudo guardar el partido. Verifique su conexión e intente de nuevo.")
     } finally {
       setCargando(false)
     }
@@ -39,38 +49,38 @@ export default function CrearPartido({ onGuardado, onCancelar }) {
 
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Fecha *</label>
+            <label className="text-xs text-gray-500 mb-1 block">Fecha <span className="text-red-500">*</span></label>
             <input type="date" name="fecha" value={form.fecha} onChange={handleChange}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400" />
+              className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400 ${camposVacios && !form.fecha ? "border-red-400" : "border-gray-200"}`} />
           </div>
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Hora *</label>
+            <label className="text-xs text-gray-500 mb-1 block">Hora <span className="text-red-500">*</span></label>
             <input type="time" name="hora" value={form.hora} onChange={handleChange}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400" />
+              className={`w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400 ${camposVacios && !form.hora ? "border-red-400" : "border-gray-200"}`} />
           </div>
         </div>
 
         <div className="mb-3">
-          <label className="text-xs text-gray-500 mb-1 block">Cancha</label>
+          <label className="text-xs text-gray-500 mb-1 block">Cancha <span className="text-gray-400 text-xs">(opcional)</span></label>
           <input name="cancha" value={form.cancha} onChange={handleChange} placeholder="Ej: Cancha Norte"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400" />
         </div>
 
         <div className="mb-3">
-          <label className="text-xs text-gray-500 mb-1 block">Torneo</label>
+          <label className="text-xs text-gray-500 mb-1 block">Torneo <span className="text-gray-400 text-xs">(opcional)</span></label>
           <input name="torneo" value={form.torneo} onChange={handleChange} placeholder="Ej: Copa Élite"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400" />
         </div>
 
         <div className="mb-3">
-          <label className="text-xs text-gray-500 mb-1 block">Equipos</label>
+          <label className="text-xs text-gray-500 mb-1 block">Equipos <span className="text-gray-400 text-xs">(opcional)</span></label>
           <input name="equipos" value={form.equipos} onChange={handleChange} placeholder="Ej: Deportivo FC vs Atlético Sur"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400" />
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
+            <label className="text-xs text-gray-500 mb-1 block">Tipo <span className="text-red-500">*</span></label>
             <select name="tipo" value={form.tipo} onChange={handleChange}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400">
               <option value="futbol">Fútbol</option>
@@ -78,7 +88,7 @@ export default function CrearPartido({ onGuardado, onCancelar }) {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Pago</label>
+            <label className="text-xs text-gray-500 mb-1 block">Pago <span className="text-red-500">*</span></label>
             <select name="tipo_pago" value={form.tipo_pago} onChange={handleChange}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400">
               <option value="en_cancha">En cancha</option>
@@ -89,12 +99,12 @@ export default function CrearPartido({ onGuardado, onCancelar }) {
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Periodos</label>
+            <label className="text-xs text-gray-500 mb-1 block">Periodos <span className="text-red-500">*</span></label>
             <input type="number" name="num_periodos" value={form.num_periodos} onChange={handleChange} min={1}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400" />
           </div>
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Min por periodo</label>
+            <label className="text-xs text-gray-500 mb-1 block">Min por periodo <span className="text-red-500">*</span></label>
             <input type="number" name="tiempo_periodo" value={form.tiempo_periodo} onChange={handleChange} min={1}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-400" />
           </div>

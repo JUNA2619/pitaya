@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import BoardKanban from "./BoardKanban"
 import CrearPartido from "./CrearPartido"
 import PartidosAsignados from "./PartidosAsignados"
@@ -13,6 +13,9 @@ export default function DashboardProgramador({ usuario, onLogout }) {
   const [mostrarCrear, setMostrarCrear] = useState(false)
   const [vista, setVista] = useState("board")
   const [pendientesWhatsapp, setPendientesWhatsapp] = useState(0)
+  const [subiendoExcel, setSubiendoExcel] = useState(false)
+  const [mensajeExcel, setMensajeExcel] = useState(null)
+  const inputExcelRef = useRef(null)
 
   useEffect(() => {
     if (vista === "board") cargarDatos()
@@ -22,10 +25,11 @@ export default function DashboardProgramador({ usuario, onLogout }) {
     setCargando(true)
     try {
       const token = localStorage.getItem("token")
+      const headers = { Authorization: `Bearer ${token}` }
       const [resPartidos, resArbitros, resPendientes] = await Promise.all([
-        fetch(`${API}/partidos`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API}/arbitros`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API}/asignaciones/pendientes-whatsapp`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API}/partidos`, { headers }),
+        fetch(`${API}/arbitros`, { headers }),
+        fetch(`${API}/asignaciones/pendientes-whatsapp`, { headers })
       ])
       setPartidos(await resPartidos.json())
       setArbitros(await resArbitros.json())
@@ -35,6 +39,36 @@ export default function DashboardProgramador({ usuario, onLogout }) {
       console.error("Error cargando datos")
     } finally {
       setCargando(false)
+    }
+  }
+
+  const subirExcel = async (e) => {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+    setSubiendoExcel(true)
+    setMensajeExcel(null)
+    try {
+      const token = localStorage.getItem("token")
+      const formData = new FormData()
+      formData.append("file", archivo)
+      const res = await fetch(`${API}/partidos/excel`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail)
+      let texto = `${data.importados} partido(s) importado(s) correctamente.`
+      if (data.errores?.length > 0) {
+        texto += ` ${data.errores.length} fila(s) con error: ${data.errores.join(" | ")}`
+      }
+      setMensajeExcel({ tipo: data.errores?.length > 0 ? "warn" : "ok", texto })
+      cargarDatos()
+    } catch (err) {
+      setMensajeExcel({ tipo: "error", texto: err.message || "No se pudo subir el archivo." })
+    } finally {
+      setSubiendoExcel(false)
+      if (inputExcelRef.current) inputExcelRef.current.value = ""
     }
   }
 
@@ -52,6 +86,19 @@ export default function DashboardProgramador({ usuario, onLogout }) {
                 className="text-sm bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700">
                 + Partido
               </button>
+              <input
+                ref={inputExcelRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={subirExcel}
+                className="hidden"
+                id="inputExcel"
+              />
+              <label
+                htmlFor="inputExcel"
+                className={`text-sm px-3 py-1.5 rounded-lg border cursor-pointer transition-all ${subiendoExcel ? "opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                {subiendoExcel ? "Subiendo..." : "Subir Excel"}
+              </label>
               <button onClick={() => setVista("asignados")}
                 className="text-sm border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50">
                 Asignados
@@ -73,6 +120,13 @@ export default function DashboardProgramador({ usuario, onLogout }) {
           </button>
         </div>
       </div>
+
+      {mensajeExcel && vista === "board" && (
+        <div className={`mx-6 mt-4 px-4 py-3 rounded-lg text-sm ${mensajeExcel.tipo === "ok" ? "bg-green-50 text-green-700" : mensajeExcel.tipo === "warn" ? "bg-yellow-50 text-yellow-700" : "bg-red-50 text-red-700"}`}>
+          {mensajeExcel.texto}
+          <button onClick={() => setMensajeExcel(null)} className="ml-3 underline text-xs">cerrar</button>
+        </div>
+      )}
 
       <div className="px-6 py-6">
         {vista === "board" && (

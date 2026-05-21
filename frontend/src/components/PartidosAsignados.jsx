@@ -6,6 +6,7 @@ export default function PartidosAsignados({ onVolver }) {
   const [asignaciones, setAsignaciones] = useState([])
   const [cargando, setCargando] = useState(true)
   const [cancelando, setCancelando] = useState(null)
+  const [confirmModal, setConfirmModal] = useState(null)
 
   useEffect(() => { cargar() }, [])
 
@@ -24,8 +25,13 @@ export default function PartidosAsignados({ onVolver }) {
     }
   }
 
-  const cancelar = async (id) => {
-    if (!confirm("¿Cancelar esta asignación?")) return
+  const confirmarCancelar = (asignacion) => {
+    setConfirmModal(asignacion)
+  }
+
+  const cancelar = async () => {
+    const id = confirmModal.id
+    setConfirmModal(null)
     setCancelando(id)
     try {
       const token = localStorage.getItem("token")
@@ -81,7 +87,7 @@ export default function PartidosAsignados({ onVolver }) {
               <p className="text-xs text-gray-500">Rol: {a.rol}</p>
             </div>
             <button
-              onClick={() => cancelar(a.id)}
+              onClick={() => confirmarCancelar(a)}
               disabled={cancelando === a.id}
               className="text-xs border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50">
               {cancelando === a.id ? "Cancelando..." : "Cancelar"}
@@ -89,6 +95,35 @@ export default function PartidosAsignados({ onVolver }) {
           </div>
         </div>
       ))}
+
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="font-semibold text-gray-800 mb-2">Cancelar asignación</h3>
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              ¿Está seguro de que desea cancelar esta asignación? Esta acción no se puede deshacer.
+            </p>
+            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 mb-5">
+              <p className="font-medium text-gray-800">{confirmModal.partidos?.torneo}</p>
+              <p>{confirmModal.partidos?.fecha} · {confirmModal.partidos?.hora}</p>
+              <p>{confirmModal.partidos?.cancha}</p>
+              <p>Árbitro: {confirmModal.usuarios?.nombre} · Rol: {confirmModal.rol}</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 border border-gray-200 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50">
+                No, mantener
+              </button>
+              <button
+                onClick={cancelar}
+                className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm hover:bg-red-700">
+                Sí, cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
